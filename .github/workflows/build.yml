@@ -8,7 +8,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Descomprimir
-        run: unzip -q old-sneaking-*.zip
+        id: find
+        run: |
+          mkdir extracted
+          unzip -q -o old-sneaking-*.zip -d extracted
+          DIR=$(dirname "$(find extracted -name build.gradle | head -1)")
+          echo "Proyecto en: $DIR"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v4
         with:
@@ -20,12 +26,12 @@ jobs:
           gradle-version: '9.2.1'
 
       - name: Build
-        working-directory: old-sneaking
+        working-directory: ${{ steps.find.outputs.dir }}
         run: gradle build
 
       - uses: actions/upload-artifact@v4
         with:
           name: old-sneaking
           path: |
-            old-sneaking/build/libs/*.jar
-            !old-sneaking/build/libs/*-sources.jar
+            ${{ steps.find.outputs.dir }}/build/libs/*.jar
+            !${{ steps.find.outputs.dir }}/build/libs/*-sources.jar
